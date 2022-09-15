@@ -70,3 +70,31 @@ exports.signUp = async (req, res, next) => {
   }
   res.status(201).json({ message: 'Signed up successfully', id: newUser._id, name: newUser.name, email: newUser.email, token });
 }
+
+exports.login = async (req, res, next) => {
+  const { email, password } = req.body;
+  let foundUser;
+  try {
+    foundUser = await User.findOne({ email });
+    if(!foundUser){
+      return next(new HttpError('Unable to process user', 'The user has not been found.', 404));
+    }
+  } catch (err) {
+    return next(new HttpError('Unable to find user'));
+  }
+  try {
+    const passwordIsValid = await bcrypt.compare(password, foundUser.password);
+    if(!passwordIsValid){
+      return next(new HttpError('Unable to process password', 'You have entered an incorrect password. Please try again.', 422));
+    }
+  } catch (err) {
+    return next(new HttpError('Unable to validate password'));
+  }
+  let token;
+  try {
+    token = jwt.sign({ id: foundUser._id, name: foundUser.name, email: foundUser.email }, 'topboy');
+  } catch (err) {
+    return next(new HttpError('Unable to generate token'));
+  }
+  res.status(200).json({ message: 'Logged in successfully', id: foundUser._id, email: foundUser.email, name: foundUser.name, token });
+}
