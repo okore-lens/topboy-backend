@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const HttpError = require("./models/http-error");
 const mainRoute = require("./routes/main-route");
 const authRoute = require("./routes/auth-route");
+const storeRoute = require('./routes/store-route');
 const keys = require("./private/keys");
 
 const app = express();
@@ -25,6 +26,7 @@ app.use((req, res, next) => {
 
 app.use(mainRoute);
 app.use("/auth", authRoute);
+app.use('/store', storeRoute);
 
 app.use((req, res, next) => {
   throw new HttpError(
