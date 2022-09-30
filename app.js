@@ -1,13 +1,13 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const path = require('path');
-const multer = require('multer');
+const path = require("path");
+const multer = require("multer");
 
 const HttpError = require("./models/http-error");
 const mainRoute = require("./routes/main-route");
 const authRoute = require("./routes/auth-route");
-const storeRoute = require('./routes/store-route');
+const storeRoute = require("./routes/store-route");
 const keys = require("./private/keys");
 
 const app = express();
@@ -15,26 +15,32 @@ const app = express();
 const mongoUrl = `mongodb+srv://topboy-nation:${keys.mongoPassword}@topboy-nation.7jlovyk.mongodb.net/topboy?retryWrites=true&w=majority`;
 
 app.use(bodyParser.json());
-app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
+app.use("/images", express.static(path.join(__dirname, "public", "images")));
 
 const fileStorage = multer.diskStorage({
-  destination: ((req, file, cb) => {
-    cb(null, path.join(__dirname, 'public', 'images'));
-  }),
-  filename: ((req, file, cb) => {
+  destination: (req, file, cb) => {
+    cb(null, path.join(__dirname, "public", "images"));
+  },
+  filename: (req, file, cb) => {
     cb(null, file.originalname);
-  })
-})
+  },
+});
 
 const fileFilter = (req, file, cb) => {
-  if (file.mimetype === 'image/png' || file.mimetype === 'image/jpg' || file.mimetype === 'image/jpeg') {
+  if (
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/jpeg"
+  ) {
     cb(null, true);
   } else {
     cb(null, false);
   }
 };
 
-const upload = multer({storage: fileStorage, fileFilter: fileFilter}).single('image');
+const upload = multer({ storage: fileStorage, fileFilter: fileFilter }).single(
+  "image"
+);
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -48,10 +54,9 @@ app.use((req, res, next) => {
 
 app.use(upload);
 
-
 app.use(mainRoute);
 app.use("/auth", authRoute);
-app.use('/store', storeRoute);
+app.use("/store", storeRoute);
 
 app.use((req, res, next) => {
   throw new HttpError(
