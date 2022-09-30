@@ -18,4 +18,6 @@ router.post('/event', [
     body('dayMonth').isLength({ min: 5 }).withMessage('Please enter a date for your event')
 ], storeController.addEvent);
 
+router.delete('/event/:eventId', storeController.deleteEvent);
+
 module.exports = router;

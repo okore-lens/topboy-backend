@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const path = require('path');
+const fs = require('fs');
 
 const HttpError = require('../models/http-error');
 const Merch = require('../models/merch');
@@ -67,7 +68,7 @@ exports.addEvent = async (req, res, next) => {
         const errorArray = errors.array();
         return next(new HttpError('Unable to process', errorArray[0].msg, 422));
     };
-    const imageUrl = image.path.split('images')[1].substring(2, image.path.split('images')[1].length);
+    const imageUrl = image.path.split('images')[1].substring(1, image.path.split('images')[1].length);
     const newEvent = new Event({ name, venue, dayMonth, poster: imageUrl });
     try {
         await newEvent.save();
@@ -75,4 +76,29 @@ exports.addEvent = async (req, res, next) => {
         return next(new HttpError('Unable to save the event'));
     }
     res.status(201).json({ message: 'Event added successfully', name: newEvent.name, id: newEvent._id, venue: newEvent.venue, poster: newEvent.poster, dayMonth: newEvent.dayMonth });
+}
+
+exports.deleteEvent = async (req, res, next) => {
+    const { eventId } = req.params;
+    let foundEvent;
+    try {
+        foundEvent = await Event.findById(eventId);
+        if (!foundEvent){
+            return next(new HttpError('Unable to get event to delete'));
+        }
+    } catch (err) {
+        return next(new HttpError('Unable to get the event'));
+    }
+    const imagePath = path.join(__dirname, '../', 'public', 'images', foundEvent.poster);
+    fs.unlink(imagePath, (error) => {
+        if (error) {
+            return next(new HttpError('Unable to delete image of event'));
+        }
+    });
+    try {
+        await Event.findByIdAndDelete(eventId);
+    } catch (err) {
+        return next(new HttpError('Unable to delete event'));
+    }
+    res.status(202).json({ message: 'Event deleted successfully', id: eventId });
 }
