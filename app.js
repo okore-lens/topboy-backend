@@ -2,7 +2,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const path = require("path");
-const multer = require("multer");
 
 const HttpError = require("./models/http-error");
 const mainRoute = require("./routes/main-route");
@@ -17,31 +16,6 @@ const mongoUrl = `mongodb+srv://topboy-nation:${keys.mongoPassword}@topboy-natio
 app.use(bodyParser.json());
 app.use("/images", express.static(path.join(__dirname, "public", "images")));
 
-const fileStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "public", "images"));
-  },
-  filename: (req, file, cb) => {
-    cb(null, file.originalname);
-  },
-});
-
-const fileFilter = (req, file, cb) => {
-  if (
-    file.mimetype === "image/png" ||
-    file.mimetype === "image/jpg" ||
-    file.mimetype === "image/jpeg"
-  ) {
-    cb(null, true);
-  } else {
-    cb(null, false);
-  }
-};
-
-const upload = multer({ storage: fileStorage, fileFilter: fileFilter }).single(
-  "image"
-);
-
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
@@ -51,8 +25,6 @@ app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE");
   next();
 });
-
-app.use(upload);
 
 app.use(mainRoute);
 app.use("/auth", authRoute);
@@ -67,6 +39,7 @@ app.use((req, res, next) => {
 });
 
 app.use((error, req, res, next) => {
+  res.locals.error = error;
   res.status(error.code || 500);
   res.json({
     message: error.message || "An unknown error has occured!",

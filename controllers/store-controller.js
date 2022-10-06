@@ -1,6 +1,7 @@
 const { validationResult } = require("express-validator");
 const path = require("path");
 const fs = require("fs");
+const multiparty = require('multiparty');
 
 const HttpError = require("../models/http-error");
 const Merch = require("../models/merch");
@@ -95,25 +96,12 @@ exports.getEvents = async (req, res, next) => {
 
 exports.addEvent = async (req, res, next) => {
   const { name, venue, dayMonth } = req.body;
-  const image = req.file;
-  if (!image) {
-    return next(
-      new HttpError(
-        "Unable to procees image upload",
-        [{ message: "Please upload an image", type: "image" }],
-        422
-      )
-    );
-  }
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     const errorArray = errors.array();
     return next(new HttpError("Unable to process", errorArray[0].msg, 422));
   }
-  const imageUrl = image.path
-    .split("images")[1]
-    .substring(1, image.path.split("images")[1].length);
-  const newEvent = new Event({ name, venue, dayMonth, poster: imageUrl });
+  const newEvent = new Event({ name, venue, dayMonth, poster: 'Not yet added' });
   try {
     await newEvent.save();
   } catch (err) {
@@ -128,6 +116,20 @@ exports.addEvent = async (req, res, next) => {
     dayMonth: newEvent.dayMonth,
   });
 };
+
+exports.addEventImage = async (req, res, next) => {
+  const image = req.body.image;
+  const { eventId } = req.params;
+  try {
+    const foundEvent = await Event.findByIdAndUpdate(eventId, { poster: image });
+    if (!foundEvent) {
+      return next(new HttpError('Could not find event'));
+    }
+  } catch (err) {
+    return next(new HttpError('Unable to upload Image'));
+  }
+  res.status(200).json({ message: 'Image', poster: image });
+}
 
 exports.deleteEvent = async (req, res, next) => {
   const { eventId } = req.params;
@@ -159,3 +161,13 @@ exports.deleteEvent = async (req, res, next) => {
   }
   res.status(202).json({ message: "Event deleted successfully", id: eventId });
 };
+
+exports.addAudioMix = async (req, res, next) => {
+  let form = new multiparty.Form();
+  form.on('part', (part) => {
+    part.pipe(fs.createWriteStream(`./public/audio/${part.filename}`)).on('close', () => {
+      res.status(201).json({ message: 'Mix uploaded successfully', mix: part.filename });
+    });
+  });
+  form.parse(req);
+}

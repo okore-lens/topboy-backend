@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form</title>
+</head>
+<body>
+    <div>
+        <input type="file" name="image" id="image">
+        <button id="button">Add Image</button>
+    </div>
+
+    <script>
+        const button = document.getElementById('button');
+        const addImageHandler = async () => {
+            const imageInput = document.getElementById('image');
+            const imageFile = imageInput.files[0];
+            const formData = new FormData();
+            formData.append('image', imageFile);
+            try {
+                console.log('starting');
+                const response = await fetch('http://localhost:8000/store/event/image', { method: 'POST', body: formData });
+                console.log('Here');
+                const responseData = await response.json();
+                console.log(responseData);
+            } catch (err) {
+                console.log(err);
+            }
+        }
+
+        button.addEventListener('click', addImageHandler);
+
+    </script>
+</body>
+</html>
